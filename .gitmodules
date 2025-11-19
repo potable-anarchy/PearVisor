@@ -1,0 +1,6 @@
+[submodule "Submodules/MoltenVK"]
+	path = Submodules/MoltenVK
+	url = https://github.com/KhronosGroup/MoltenVK.git
+[submodule "Submodules/virglrenderer"]
+	path = Submodules/virglrenderer
+	url = https://gitlab.freedesktop.org/virgl/virglrenderer.git
