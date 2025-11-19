@@ -1,7 +1,7 @@
 # CMakeLists.txt for PearVisor GPU Subsystem
 
 cmake_minimum_required(VERSION 3.25)
-project(PearVisorGPU VERSION 0.1.0 LANGUAGES C CXX)
+project(PearVisorGPU VERSION 0.1.0 LANGUAGES C CXX OBJCXX)
 
 # C/C++ Standards
 set(CMAKE_C_STANDARD 17)
@@ -25,6 +25,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 # Source files
 set(GPU_SOURCES
     src/pv_gpu.c
+    src/pv_virtio_gpu.c
+    src/pv_metal_renderer.mm
 )
 
 # Create static library
@@ -35,7 +37,7 @@ if(APPLE)
     find_library(METAL_FRAMEWORK Metal)
     find_library(FOUNDATION_FRAMEWORK Foundation)
     find_library(QUARTZCORE_FRAMEWORK QuartzCore)
-
+    
     target_link_libraries(PearVisorGPU
         ${METAL_FRAMEWORK}
         ${FOUNDATION_FRAMEWORK}
@@ -43,8 +45,8 @@ if(APPLE)
     )
 endif()
 
-# TODO: Add MoltenVK integration
-# TODO: Add virglrenderer integration
+# Enable Objective-C++ for .mm files
+set_source_files_properties(src/pv_metal_renderer.mm PROPERTIES COMPILE_FLAGS "-x objective-c++")
 
 # Installation
 install(TARGETS PearVisorGPU
@@ -62,4 +64,5 @@ message(STATUS "PearVisor GPU Subsystem Configuration:")
 message(STATUS "  Build Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "  C Compiler: ${CMAKE_C_COMPILER}")
 message(STATUS "  C++ Compiler: ${CMAKE_CXX_COMPILER}")
+message(STATUS "  Metal Framework: ${METAL_FRAMEWORK}")
 message(STATUS "  Install Prefix: ${CMAKE_INSTALL_PREFIX}")
