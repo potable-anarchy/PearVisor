@@ -210,3 +210,52 @@ pv_gpu_error_t pv_gpu_present_frame(pv_gpu_device_t* device) {
     
     return PV_GPU_OK;
 }
+
+// MARK: - Global Initialization
+
+static bool g_gpu_initialized = false;
+
+pv_gpu_error_t pv_gpu_init(void) {
+    if (g_gpu_initialized) {
+        return PV_GPU_OK;
+    }
+    
+    printf("PearVisor GPU: Initializing GPU subsystem...\n");
+    
+    // TODO: Global GPU initialization if needed
+    
+    g_gpu_initialized = true;
+    printf("PearVisor GPU: GPU subsystem initialized\n");
+    
+    return PV_GPU_OK;
+}
+
+void pv_gpu_shutdown(void) {
+    if (!g_gpu_initialized) {
+        return;
+    }
+    
+    printf("PearVisor GPU: Shutting down GPU subsystem...\n");
+    
+    // TODO: Global GPU cleanup
+    
+    g_gpu_initialized = false;
+    printf("PearVisor GPU: GPU subsystem shutdown complete\n");
+}
+
+pv_gpu_error_t pv_gpu_get_info(pv_gpu_info_t *info) {
+    if (!info) {
+        return PV_GPU_ERROR_INIT_FAILED;
+    }
+    
+    // Fill in GPU info (simplified for now)
+    memset(info, 0, sizeof(pv_gpu_info_t));
+    strncpy(info->name, "Apple Silicon GPU", sizeof(info->name) - 1);
+    info->vendor_id = 0x106B; // Apple
+    info->device_id = 0x0001;
+    info->vram_size = 8ULL * 1024 * 1024 * 1024; // 8GB estimate
+    info->supports_vulkan = true;
+    info->supports_metal = true;
+    
+    return PV_GPU_OK;
+}

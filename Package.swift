@@ -1,5 +1,4 @@
 // swift-tools-version: 5.9
-// The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
 
@@ -13,47 +12,38 @@ let package = Package(
             name: "PearVisor",
             targets: ["PearVisor"]
         ),
-        .library(
-            name: "PearVisorCore",
-            targets: ["PearVisorCore"]
-        ),
     ],
-    dependencies: [],
     targets: [
         .executableTarget(
             name: "PearVisor",
             dependencies: ["PearVisorCore"],
             path: "Sources/PearVisor",
-            resources: [
-                .process("Resources")
+            swiftSettings: [
+                .unsafeFlags(["-I", "GPU/include"])
+            ],
+            linkerSettings: [
+                .unsafeFlags(["-L", "GPU/build"]),
+                .linkedLibrary("PearVisorGPU"),
+                .linkedFramework("Metal"),
+                .linkedFramework("Foundation"),
+                .linkedFramework("QuartzCore")
             ]
         ),
         
         .target(
             name: "PearVisorCore",
-            dependencies: ["PearVisorGPU"],
+            dependencies: [],
             path: "Sources/PearVisorCore",
+            swiftSettings: [
+                .unsafeFlags(["-I", "GPU/include"])
+            ],
             linkerSettings: [
                 .unsafeFlags(["-L", "GPU/build"]),
-                .linkedLibrary("PearVisorGPU")
+                .linkedLibrary("PearVisorGPU"),
+                .linkedFramework("Metal"),
+                .linkedFramework("Foundation"),
+                .linkedFramework("QuartzCore")
             ]
-        ),
-        
-        .systemLibrary(
-            name: "PearVisorGPU",
-            path: "Sources/PearVisorGPU",
-            pkgConfig: nil
-        ),
-        
-        .testTarget(
-            name: "PearVisorTests",
-            dependencies: ["PearVisor"],
-            path: "Tests/PearVisorTests"
-        ),
-        .testTarget(
-            name: "PearVisorCoreTests",
-            dependencies: ["PearVisorCore"],
-            path: "Tests/PearVisorCoreTests"
         ),
     ]
 )
