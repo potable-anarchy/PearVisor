@@ -9,15 +9,16 @@ let package = Package(
     ],
     products: [
         .executable(
-            name: "PearVisor",
-            targets: ["PearVisor"]
+            name: "GPUBenchmark",
+            targets: ["GPUBenchmark"]
         ),
     ],
     targets: [
         .executableTarget(
-            name: "PearVisor",
+            name: "GPUBenchmark",
             dependencies: ["PearVisorCore"],
             path: "Sources/PearVisor",
+            sources: ["GPUBenchmark.swift"],
             swiftSettings: [
                 .unsafeFlags(["-I", "GPU/include"])
             ],
@@ -30,7 +31,7 @@ let package = Package(
                 .linkedFramework("QuartzCore")
             ]
         ),
-        
+
         .target(
             name: "PearVisorCore",
             dependencies: [],
