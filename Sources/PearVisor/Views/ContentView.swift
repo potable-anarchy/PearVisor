@@ -230,7 +230,5 @@ struct PerformanceSettingsView: View {
     }
 }
 
-#Preview {
-    ContentView()
-        .environmentObject(AppState())
-}
+// Preview removed - requires Xcode 15+ with macro support
+// To preview, open Package.swift in Xcode and use the built-in preview
