@@ -24,6 +24,7 @@ let package = Package(
             linkerSettings: [
                 .unsafeFlags(["-L", "GPU/build"]),
                 .linkedLibrary("PearVisorGPU"),
+                .linkedLibrary("c++"),
                 .linkedFramework("Metal"),
                 .linkedFramework("Foundation"),
                 .linkedFramework("QuartzCore")
@@ -40,6 +41,7 @@ let package = Package(
             linkerSettings: [
                 .unsafeFlags(["-L", "GPU/build"]),
                 .linkedLibrary("PearVisorGPU"),
+                .linkedLibrary("c++"),
                 .linkedFramework("Metal"),
                 .linkedFramework("Foundation"),
                 .linkedFramework("QuartzCore")
