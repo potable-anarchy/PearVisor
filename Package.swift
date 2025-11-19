@@ -9,47 +9,42 @@ let package = Package(
         .macOS(.v14)
     ],
     products: [
-        // Main application
         .executable(
             name: "PearVisor",
             targets: ["PearVisor"]
         ),
-        // Core library (can be used by other tools)
         .library(
             name: "PearVisorCore",
             targets: ["PearVisorCore"]
         ),
     ],
-    dependencies: [
-        // Add external dependencies here if needed
-    ],
+    dependencies: [],
     targets: [
-        // Main application target
         .executableTarget(
             name: "PearVisor",
-            dependencies: ["PearVisorCore", "PearVisorGPU"],
+            dependencies: ["PearVisorCore"],
             path: "Sources/PearVisor",
             resources: [
                 .process("Resources")
             ]
         ),
-
-        // Core VM management library
+        
         .target(
             name: "PearVisorCore",
             dependencies: ["PearVisorGPU"],
-            path: "Sources/PearVisorCore"
+            path: "Sources/PearVisorCore",
+            linkerSettings: [
+                .unsafeFlags(["-L", "GPU/build"]),
+                .linkedLibrary("PearVisorGPU")
+            ]
         ),
-
-        // GPU subsystem Swift wrapper
-        .target(
+        
+        .systemLibrary(
             name: "PearVisorGPU",
-            dependencies: [],
             path: "Sources/PearVisorGPU",
-            publicHeadersPath: "include"
+            pkgConfig: nil
         ),
-
-        // Tests
+        
         .testTarget(
             name: "PearVisorTests",
             dependencies: ["PearVisor"],
