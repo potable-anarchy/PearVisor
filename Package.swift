@@ -1,5 +1,4 @@
 // swift-tools-version: 5.9
-// The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
 
@@ -9,56 +8,45 @@ let package = Package(
         .macOS(.v14)
     ],
     products: [
-        // Main application
         .executable(
-            name: "PearVisor",
-            targets: ["PearVisor"]
+            name: "GPUBenchmark",
+            targets: ["GPUBenchmark"]
         ),
-        // Core library (can be used by other tools)
-        .library(
-            name: "PearVisorCore",
-            targets: ["PearVisorCore"]
-        ),
-    ],
-    dependencies: [
-        // Add external dependencies here if needed
     ],
     targets: [
-        // Main application target
         .executableTarget(
-            name: "PearVisor",
-            dependencies: ["PearVisorCore", "PearVisorGPU"],
+            name: "GPUBenchmark",
+            dependencies: ["PearVisorCore"],
             path: "Sources/PearVisor",
-            resources: [
-                .process("Resources")
+            sources: ["GPUBenchmark.swift"],
+            swiftSettings: [
+                .unsafeFlags(["-I", "GPU/include"])
+            ],
+            linkerSettings: [
+                .unsafeFlags(["-L", "GPU/build"]),
+                .linkedLibrary("PearVisorGPU"),
+                .linkedLibrary("c++"),
+                .linkedFramework("Metal"),
+                .linkedFramework("Foundation"),
+                .linkedFramework("QuartzCore")
             ]
         ),
 
-        // Core VM management library
         .target(
             name: "PearVisorCore",
-            dependencies: ["PearVisorGPU"],
-            path: "Sources/PearVisorCore"
-        ),
-
-        // GPU subsystem Swift wrapper
-        .target(
-            name: "PearVisorGPU",
             dependencies: [],
-            path: "Sources/PearVisorGPU",
-            publicHeadersPath: "include"
-        ),
-
-        // Tests
-        .testTarget(
-            name: "PearVisorTests",
-            dependencies: ["PearVisor"],
-            path: "Tests/PearVisorTests"
-        ),
-        .testTarget(
-            name: "PearVisorCoreTests",
-            dependencies: ["PearVisorCore"],
-            path: "Tests/PearVisorCoreTests"
+            path: "Sources/PearVisorCore",
+            swiftSettings: [
+                .unsafeFlags(["-I", "GPU/include"])
+            ],
+            linkerSettings: [
+                .unsafeFlags(["-L", "GPU/build"]),
+                .linkedLibrary("PearVisorGPU"),
+                .linkedLibrary("c++"),
+                .linkedFramework("Metal"),
+                .linkedFramework("Foundation"),
+                .linkedFramework("QuartzCore")
+            ]
         ),
     ]
 )
