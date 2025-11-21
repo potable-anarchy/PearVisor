@@ -14,6 +14,11 @@ let package = Package(
             name: "PearVisor",
             targets: ["PearVisor"]
         ),
+        // VM testing tool
+        .executable(
+            name: "pearvisor-test",
+            targets: ["PearVisorTest"]
+        ),
         // Core library (can be used by other tools)
         .library(
             name: "PearVisorCore",
@@ -32,6 +37,13 @@ let package = Package(
             resources: [
                 .process("Resources")
             ]
+        ),
+
+        // VM testing tool
+        .executableTarget(
+            name: "PearVisorTest",
+            dependencies: ["PearVisorCore"],
+            path: "Sources/PearVisorTest"
         ),
 
         // Core VM management library
