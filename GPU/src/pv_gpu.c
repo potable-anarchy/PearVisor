@@ -78,15 +78,19 @@ pv_gpu_error_t pv_gpu_create_device(const uint8_t vm_id[16], pv_gpu_device_t **d
 
     printf("PearVisor GPU: Creating device for VM\n");
 
-    // TODO: Create virtio-gpu device
-    // TODO: Setup shared memory
-    // TODO: Initialize Venus protocol handler
-
-    // Stub: allocate empty device structure
+    // Allocate device structure
     *device = (pv_gpu_device_t*)calloc(1, sizeof(pv_gpu_device_t));
     if (!*device) {
         return PV_GPU_ERROR_OUT_OF_MEMORY;
     }
+
+    // Copy VM ID
+    memcpy((*device)->vm_id, vm_id, 16);
+    (*device)->initialized = true;
+
+    // TODO: Create virtio-gpu device
+    // TODO: Setup shared memory
+    // TODO: Initialize Venus protocol handler
 
     return PV_GPU_OK;
 }

@@ -22,13 +22,32 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 # Include directories
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# virglrenderer paths
+set(VIRGL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Submodules/virglrenderer/build-macos/install)
+include_directories(${VIRGL_DIR}/include)
+link_directories(${VIRGL_DIR}/lib)
+
 # Source files
 set(GPU_SOURCES
     src/pv_gpu.c
+    src/pv_virgl.c
+    src/pv_venus_ring.c
+    src/pv_venus_protocol.c
+    src/pv_venus_decoder.c
+    src/pv_moltenvk.c
+    src/pv_venus_handlers.c
+    src/pv_venus_integration.c
 )
 
 # Create static library
 add_library(PearVisorGPU STATIC ${GPU_SOURCES})
+
+# Find Vulkan
+find_package(Vulkan REQUIRED)
+include_directories(${Vulkan_INCLUDE_DIRS})
+
+# Link virglrenderer and Vulkan
+target_link_libraries(PearVisorGPU virglrenderer ${Vulkan_LIBRARIES})
 
 # macOS frameworks (Metal, IOKit, etc.)
 if(APPLE)
@@ -43,8 +62,30 @@ if(APPLE)
     )
 endif()
 
-# TODO: Add MoltenVK integration
-# TODO: Add virglrenderer integration
+# Test executables
+add_executable(test_virgl src/test_virgl.c)
+target_link_libraries(test_virgl PearVisorGPU)
+
+add_executable(test_venus_ring src/test_venus_ring.c)
+target_link_libraries(test_venus_ring PearVisorGPU)
+
+add_executable(test_venus_decoder src/test_venus_decoder.c)
+target_link_libraries(test_venus_decoder PearVisorGPU)
+
+add_executable(test_moltenvk src/test_moltenvk.c)
+target_link_libraries(test_moltenvk PearVisorGPU)
+
+add_executable(test_venus_handlers src/test_venus_handlers.c)
+target_link_libraries(test_venus_handlers PearVisorGPU)
+
+add_executable(test_resource_handlers src/test_resource_handlers.c)
+target_link_libraries(test_resource_handlers PearVisorGPU)
+
+add_executable(test_command_buffers src/test_command_buffers.c)
+target_link_libraries(test_command_buffers PearVisorGPU)
+
+add_executable(test_venus_integration src/test_venus_integration.c)
+target_link_libraries(test_venus_integration PearVisorGPU)
 
 # Installation
 install(TARGETS PearVisorGPU
