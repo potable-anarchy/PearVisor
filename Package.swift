@@ -38,7 +38,15 @@ let package = Package(
         .target(
             name: "PearVisorCore",
             dependencies: ["PearVisorGPU"],
-            path: "Sources/PearVisorCore"
+            path: "Sources/PearVisorCore",
+            linkerSettings: [
+                .unsafeFlags([
+                    "-L/Users/brad/code/PearVisor/GPU/build",
+                    "-L/opt/homebrew/lib",
+                    "-lPearVisorGPU",
+                    "-lvulkan"
+                ])
+            ]
         ),
 
         // GPU subsystem Swift wrapper

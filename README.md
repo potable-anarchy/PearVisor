@@ -19,7 +19,9 @@ PearVisor is an open-source hypervisor that provides high-performance GPU accele
 - ✅ Virtualization.framework integration (Session 11)
 - ✅ Swift ↔ C GPU bridge operational
 - ✅ VZVirtioGraphicsDeviceConfiguration ready
-- 🔄 Linux ARM64 guest with Venus driver (Session 12 - next)
+- ✅ Linux guest setup automation (Session 12)
+- ✅ Swift Package Manager + CMake integration
+- 🔄 Boot Linux guest and install Venus driver (Session 13 - next)
 - 🔄 End-to-end GPU workload testing (vkcube) (Session 13)
 - 🔄 Performance benchmarking vs. native (Session 14)
 

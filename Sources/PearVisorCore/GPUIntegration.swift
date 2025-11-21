@@ -197,7 +197,7 @@ public class GPUIntegration {
 
     // MARK: - Cleanup
 
-    private func cleanup() {
+    public func cleanup() {
         stopVenus()
     }
 }

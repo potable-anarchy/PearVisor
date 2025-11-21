@@ -1,167 +1,249 @@
-# Guest OS Images
+# PearVisor Guest Images
 
-This directory contains scripts to download and prepare guest operating system images for PearVisor.
+This directory contains VM disk images and installation resources for PearVisor guest operating systems.
 
-## Supported Operating Systems (Phase 1)
+## Supported Distributions
 
 ### Linux ARM64
-- Ubuntu 24.04 LTS (recommended)
-- Fedora 40
-- Debian 12
-- Arch Linux ARM
 
-## Downloading Images
+**Ubuntu 24.04 LTS (Recommended)**
+- **Download:** https://cdimage.ubuntu.com/releases/24.04/release/ubuntu-24.04-live-server-arm64.iso
+- **Kernel:** 6.8+ (virtio-gpu support included)
+- **Mesa:** Available in repositories, Venus requires building from source
+- **Best For:** General purpose, well-tested, stable
 
-### Ubuntu 24.04 ARM64
+**Fedora 41 Server**
+- **Download:** https://download.fedoraproject.org/pub/fedora/linux/releases/41/Server/aarch64/iso/
+- **Kernel:** 6.11+ (latest virtio-gpu features)
+- **Mesa:** More recent versions available
+- **Best For:** Cutting-edge features, newer Mesa versions
+
+**Debian 13 (Trixie)**
+- **Download:** https://cdimage.debian.org/cdimage/weekly-builds/arm64/iso-cd/
+- **Kernel:** 6.7+
+- **Mesa:** Stable, well-tested
+- **Best For:** Stability, minimal bloat
+
+## Required Kernel Features
+
+All guest kernels must have these features enabled:
+
+```
+CONFIG_DRM_VIRTIO_GPU=y          # virtio-gpu kernel driver
+CONFIG_VIRTIO_MMIO=y             # MMIO transport
+CONFIG_VIRTIO_PCI=y              # PCI transport
+CONFIG_DRM=y                     # DRM subsystem
+CONFIG_DRM_FBDEV_EMULATION=y     # Framebuffer emulation
+CONFIG_FB=y                      # Framebuffer support
+```
+
+Most modern ARM64 distributions include these by default.
+
+## Mesa Venus Driver
+
+The Venus Vulkan driver must be built from source with specific options:
+
+### Building Mesa (Ubuntu/Debian)
 
 ```bash
-./ubuntu-24.04-arm64.sh
+# Install dependencies
+sudo apt install -y \
+    meson ninja-build \
+    libdrm-dev libx11-dev libxext-dev libxfixes-dev \
+    libxcb-glx0-dev libxcb-shm0-dev libxcb-dri2-0-dev \
+    libxcb-dri3-dev libxcb-present-dev \
+    libwayland-dev wayland-protocols \
+    python3-mako bison flex
+
+# Clone Mesa
+git clone https://gitlab.freedesktop.org/mesa/mesa.git
+cd mesa
+
+# Configure with Venus driver
+meson setup build \
+    -Dvulkan-drivers=virtio \
+    -Dgallium-drivers=virgl,zink \
+    -Dplatforms=x11,wayland \
+    -Dglx=dri \
+    -Degl=enabled \
+    -Dgles1=disabled \
+    -Dgles2=enabled \
+    -Dshared-glapi=enabled
+
+# Build and install
+ninja -C build
+sudo ninja -C build install
 ```
 
-This will download the Ubuntu 24.04 ARM64 cloud image and prepare it for PearVisor.
+### Building Mesa (Fedora)
 
-**Manual download:**
 ```bash
-wget https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-arm64.img
+# Install dependencies
+sudo dnf install -y \
+    meson ninja-build \
+    libdrm-devel libX11-devel libxcb-devel \
+    wayland-devel wayland-protocols-devel \
+    python3-mako bison flex
+
+# Clone and build (same as above)
+git clone https://gitlab.freedesktop.org/mesa/mesa.git
+cd mesa
+meson setup build -Dvulkan-drivers=virtio -Dgallium-drivers=virgl,zink
+ninja -C build
+sudo ninja -C build install
 ```
 
-### Fedora 40 ARM64
+## Verification
+
+After installing Mesa, verify Venus driver is available:
 
 ```bash
-curl -O https://download.fedoraproject.org/pub/fedora/linux/releases/40/Cloud/aarch64/images/Fedora-Cloud-Base-Generic-40-1.14.aarch64.qcow2
+# Check for Venus Vulkan driver
+ls -la /usr/local/lib/aarch64-linux-gnu/libvulkan_virtio.so
+
+# Test Vulkan
+vulkaninfo | grep "driverName"
+# Should show: driverName = venus
+
+# List available GPUs
+vkcube --enumerate
+# Should show: Apple M1 Max GPU
 ```
 
-### Debian 12 ARM64
+## Automated Setup Scripts
+
+### Quick Setup (Ubuntu)
 
 ```bash
-curl -O https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-arm64.qcow2
+# Download and run automated setup
+curl -fsSL https://raw.githubusercontent.com/potable-anarchy/PearVisor/main/GuestImages/setup-ubuntu-venus.sh | sudo bash
 ```
 
-## Image Requirements
+### Quick Setup (Fedora)
 
-PearVisor expects guest images to have:
-- **Architecture:** ARM64/AArch64
-- **Format:** Raw (.img) or qcow2
-- **Kernel:** Linux 6.x+ with virtio drivers
-- **Graphics:** Mesa 24.x+ with Venus driver for GPU acceleration
-
-## Preparing Custom Images
-
-To prepare a custom Linux image for PearVisor:
-
-1. **Install required packages:**
-   ```bash
-   # On Ubuntu/Debian
-   sudo apt install mesa-vulkan-drivers mesa-utils
-   
-   # On Fedora
-   sudo dnf install mesa-vulkan-drivers mesa-demos
-   ```
-
-2. **Verify Venus support:**
-   ```bash
-   # Inside the guest VM
-   VK_DRIVER_FILES=/usr/share/vulkan/icd.d/venus_icd.x86_64.json vulkaninfo | grep Venus
-   ```
-
-3. **Test GPU acceleration:**
-   ```bash
-   # Simple OpenGL test
-   glxgears
-   
-   # Vulkan test
-   vkcube
-   ```
-
-## Image Storage
-
-By default, PearVisor stores VM images at:
-```
-~/Library/Containers/PearVisor/VMs/
-```
-
-Each VM has its own directory:
-```
-~/Library/Containers/PearVisor/VMs/
-├── Ubuntu-VM-1/
-│   ├── disk.img
-│   ├── config.json
-│   └── snapshots/
-└── Fedora-VM-1/
-    ├── disk.qcow2
-    ├── config.json
-    └── snapshots/
-```
-
-## Image Formats
-
-### Raw Images (.img)
-- Simple, no compression
-- Fast I/O performance
-- Larger file size
-- Good for development
-
-### qcow2 Images
-- Compressed, copy-on-write
-- Smaller file size
-- Snapshot support
-- Better for storage efficiency
-
-## Converting Images
-
-Convert qcow2 to raw:
 ```bash
-qemu-img convert -f qcow2 -O raw source.qcow2 destination.img
+# Download and run automated setup
+curl -fsSL https://raw.githubusercontent.com/potable-anarchy/PearVisor/main/GuestImages/setup-fedora-venus.sh | sudo bash
 ```
 
-Convert raw to qcow2:
+## Disk Image Management
+
+### Creating a New Disk Image
+
 ```bash
-qemu-img convert -f raw -O qcow2 source.img destination.qcow2
+# Create 64GB disk image
+qemu-img create -f qcow2 ubuntu-24.04-venus.qcow2 64G
+
+# Or use raw format (better performance)
+dd if=/dev/zero of=ubuntu-24.04-venus.img bs=1G count=64
 ```
 
-## Cloud-Init Support
+### Resizing Disk Images
 
-PearVisor supports cloud-init for automated guest configuration:
+```bash
+# Resize qcow2 image
+qemu-img resize ubuntu-24.04-venus.qcow2 +32G
 
-```yaml
-# user-data
-#cloud-config
-users:
-  - name: pearvisor
-    ssh_authorized_keys:
-      - ssh-rsa AAAA...
-    sudo: ALL=(ALL) NOPASSWD:ALL
-    shell: /bin/bash
-
-packages:
-  - build-essential
-  - git
-  - mesa-vulkan-drivers
+# Resize raw image
+dd if=/dev/zero bs=1G count=32 >> ubuntu-24.04-venus.img
 ```
+
+## Pre-configured Images
+
+Pre-configured disk images with Venus driver already installed will be available for download:
+
+- **ubuntu-24.04-venus-arm64.qcow2** (~4GB compressed)
+  - Ubuntu 24.04 LTS
+  - Mesa 24.x with Venus driver
+  - Vulkan tools installed
+  - Desktop environment: Minimal (no GUI by default)
+
+- **fedora-41-venus-arm64.qcow2** (~5GB compressed)
+  - Fedora 41 Server
+  - Mesa 24.x with Venus driver
+  - Vulkan tools installed
+
+Download links will be added once images are available.
 
 ## Troubleshooting
 
-### GPU Not Working
-1. Verify Mesa Venus driver is installed
-2. Check kernel supports virtio-gpu: `lsmod | grep virtio`
-3. Verify Vulkan device: `vulkaninfo`
+### virtio-gpu driver not loading
 
-### Slow Performance
-1. Use raw disk images instead of qcow2
-2. Allocate more CPU cores and memory
-3. Check GPU acceleration is enabled
+```bash
+# Check if module exists
+modprobe -n virtio_gpu
 
-### Boot Failure
-1. Verify image is ARM64 architecture
-2. Check kernel has virtio drivers
-3. Inspect console logs for errors
+# Load manually
+sudo modprobe virtio_gpu
 
-## Pre-configured Images (Coming Soon)
+# Check kernel logs
+dmesg | grep virtio
+```
 
-We plan to provide pre-configured PearVisor images with:
-- Optimized kernel and drivers
-- Pre-installed Mesa Venus drivers
-- Development tools and gaming support
-- FEX-Emu for x86_64 emulation (Phase 2)
+### Venus driver not found
 
-Stay tuned!
+```bash
+# Verify Mesa installation
+ldconfig -p | grep vulkan_virtio
+
+# Check Vulkan ICD
+cat /usr/share/vulkan/icd.d/virtio_icd.*.json
+
+# Rebuild Mesa if needed
+cd mesa
+sudo ninja -C build uninstall
+ninja -C build clean
+meson setup build --wipe -Dvulkan-drivers=virtio
+ninja -C build
+sudo ninja -C build install
+```
+
+### Vulkan initialization fails
+
+```bash
+# Enable debug output
+export VK_LOADER_DEBUG=all
+export MESA_DEBUG=1
+export VK_ICD_FILENAMES=/usr/local/share/vulkan/icd.d/virtio_icd.aarch64.json
+
+# Test basic Vulkan
+vulkaninfo
+```
+
+## Directory Structure
+
+```
+GuestImages/
+├── README.md                           # This file
+├── setup-ubuntu-venus.sh              # Ubuntu automated setup
+├── setup-fedora-venus.sh              # Fedora automated setup
+├── Downloads/                          # Downloaded ISOs
+│   ├── ubuntu-24.04-live-server-arm64.iso
+│   └── Fedora-Server-dvd-aarch64-41.iso
+├── DiskImages/                         # VM disk images
+│   ├── ubuntu-24.04-venus.qcow2
+│   └── fedora-41-venus.qcow2
+└── Kernels/                            # Custom kernels (if needed)
+    └── config-6.8-virtio-gpu          # Sample kernel config
+```
+
+## Contributing
+
+If you create a working guest configuration, please contribute:
+
+1. Test thoroughly (Venus driver works, vkcube runs)
+2. Document the setup process
+3. Create an automated setup script
+4. Submit a pull request
+
+## Support
+
+For guest setup issues:
+- Check kernel logs: `dmesg | grep virtio`
+- Check Mesa logs: `MESA_DEBUG=1 vulkaninfo`
+- Check Vulkan: `VK_LOADER_DEBUG=all vkcube`
+- Ask in GitHub Discussions
+
+## License
+
+Guest setup scripts and documentation are MIT licensed, same as PearVisor.
