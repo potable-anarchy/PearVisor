@@ -204,6 +204,7 @@ public struct VMConfiguration: Codable {
     public var enableGPU: Bool = true
     public var enableSharedDirectories: Bool = true
     public var networkMode: NetworkMode = .nat
+    public var isoPath: String? = nil // Path to ISO for installation
 
     public init(
         name: String,
@@ -213,7 +214,8 @@ public struct VMConfiguration: Codable {
         diskSize: UInt64 = 64 * 1024 * 1024 * 1024,
         enableGPU: Bool = true,
         enableSharedDirectories: Bool = true,
-        networkMode: NetworkMode = .nat
+        networkMode: NetworkMode = .nat,
+        isoPath: String? = nil
     ) {
         self.name = name
         self.guestOS = guestOS
@@ -223,6 +225,7 @@ public struct VMConfiguration: Codable {
         self.enableGPU = enableGPU
         self.enableSharedDirectories = enableSharedDirectories
         self.networkMode = networkMode
+        self.isoPath = isoPath
     }
 }
 

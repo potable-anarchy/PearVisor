@@ -48,7 +48,8 @@ class VMTest {
             diskSize: 32 * 1024 * 1024 * 1024, // 32GB
             enableGPU: true,
             enableSharedDirectories: false,
-            networkMode: .nat
+            networkMode: .nat,
+            isoPath: isoPath
         )
 
         print("Configuration:")

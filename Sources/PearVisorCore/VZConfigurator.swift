@@ -51,23 +51,19 @@ public class VZConfigurator {
     // MARK: - Boot Loader
 
     private static func createBootLoader(config: VMConfiguration, vmDirectory: URL) throws -> VZBootLoader {
-        let bootLoader = VZLinuxBootLoader(kernelURL: config.kernelURL ?? defaultKernelURL(vmDirectory: vmDirectory))
+        // Use EFI boot loader (supports ISO boot)
+        let efiVariableStore = vmDirectory.appendingPathComponent("efi-variables.bin")
 
-        if let initrdURL = config.initrdURL {
-            bootLoader.initialRamdiskURL = initrdURL
+        // Create EFI variable store if it doesn't exist
+        if !FileManager.default.fileExists(atPath: efiVariableStore.path) {
+            try VZEFIVariableStore(creatingVariableStoreAt: efiVariableStore)
         }
 
-        bootLoader.commandLine = config.kernelCommandLine ?? defaultKernelCommandLine()
+        let variableStore = VZEFIVariableStore(url: efiVariableStore)
+        let bootLoader = VZEFIBootLoader()
+        bootLoader.variableStore = variableStore
 
         return bootLoader
-    }
-
-    private static func defaultKernelURL(vmDirectory: URL) -> URL {
-        return vmDirectory.appendingPathComponent("vmlinuz")
-    }
-
-    private static func defaultKernelCommandLine() -> String {
-        return "console=hvc0 root=/dev/vda rw"
     }
 
     // MARK: - Storage
@@ -75,6 +71,7 @@ public class VZConfigurator {
     private static func createStorageDevices(config: VMConfiguration, vmDirectory: URL) throws -> [VZStorageDeviceConfiguration] {
         var devices: [VZStorageDeviceConfiguration] = []
 
+        // Primary disk
         let diskURL = config.diskURL ?? vmDirectory.appendingPathComponent("disk.img")
 
         if !FileManager.default.fileExists(atPath: diskURL.path) {
@@ -84,6 +81,20 @@ public class VZConfigurator {
         let diskAttachment = try VZDiskImageStorageDeviceAttachment(url: diskURL, readOnly: false)
         let blockDevice = VZVirtioBlockDeviceConfiguration(attachment: diskAttachment)
         devices.append(blockDevice)
+
+        // ISO CD-ROM (if specified)
+        if let isoPath = config.isoPath {
+            let isoURL = URL(fileURLWithPath: isoPath)
+            guard FileManager.default.fileExists(atPath: isoURL.path) else {
+                throw VMError.invalidConfiguration("ISO file not found: \(isoPath)")
+            }
+
+            let isoAttachment = try VZDiskImageStorageDeviceAttachment(url: isoURL, readOnly: true)
+            let cdromDevice = VZVirtioBlockDeviceConfiguration(attachment: isoAttachment)
+            devices.append(cdromDevice)
+
+            print("Attached ISO: \(isoPath)")
+        }
 
         return devices
     }
